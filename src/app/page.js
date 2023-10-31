@@ -4,9 +4,32 @@ import { useRef } from 'react'
 import Editor, {useMonaco} from '@monaco-editor/react';
 
 const parser = peg.generate(`
-program = functionCall
+{
+  function buildBinaryExpr(head, tail) {
+  	return tail.reduce(function(result, element) {
+      return {
+        type: "BinaryExpression",
+        operator: element[0],
+        left: result,
+        right: element[1]
+      };
+    }, head);
+  }
+}
 
-functionCall = fn:$chars beginBracket head:paramType? tail:(comma restP:paramType {return restP})* endBracket {
+program = p:(binaryExpr/columnName/functionCallExpr) {
+  return {
+    type: "Script",
+    body: [
+      {
+        type: "ExpressionStatement",
+        expression: p,
+      }
+    ]
+  }
+}
+
+functionCallExpr = fn:$chars beginBracket head:paramType? tail:(comma restP:paramType {return restP})* endBracket {
   let params = ""
   const paramList = []
   if (head) {
@@ -32,23 +55,45 @@ functionCall = fn:$chars beginBracket head:paramType? tail:(comma restP:paramTyp
     arguments: paramList
   }
 }
-paramType = binaryExpr/string/number/columnName/functionCall
-binaryExpr = l:(string/number/columnName/functionCall) o:operType r:(string/number/columnName/functionCall) {
+paramType = binaryExpr/string/number/columnName/functionCallExpr
+
+// 二元表达式
+binaryExpr = head:term tail:(("==" / ">" / "<" / "!=" / "<=" / ">=" / "+" / "-") term)* {
+  console.log(tail)
+  if (!tail.length) {
+    return head
+  }
+  
+  return buildBinaryExpr(head, tail)
+}
+term = head:factor tail:(("*" / "/") factor)* {
+  if (!tail?.length) {
+    return head
+  }
+  
+  return buildBinaryExpr(head, tail)
+}
+factor = "(" b:binaryExpr ")" {
   return {
-    type: "BinaryExpression",
-    operator: o,
-    left: l,
-    right: r
+    type: "ParenthesisExpression",
+    expression: b
+  }
+} / string/number/columnName/functionCallExpr
+// end 二元表达式
+
+parenthesisExpr = "(" b:binaryExpr ")" {
+  return {
+    type: "ParenthesisExpression",
+    expression: b
   }
 }
-operType = "=="/">"/"<"/"!="/"<="/">="
 string = doubleQuotationMark s:chars doubleQuotationMark {
   return {
     type: "StringLiteral",
     value: s
   }
 }
-chars = c:[a-z]i+ {
+chars = c:[a-z\u4e00-\u9fa5]i+ {
   return c.join("")
 }
 number = n:[0-9]+ {
@@ -101,7 +146,10 @@ export default function Home() {
   }
 
   return (
-    <Editor height="90vh" defaultLanguage="javascript"
+    <Editor 
+      height="90vh" 
+      defaultLanguage="javascript"
+      defaultValue='`金额`+(SUM(IF(`活动名称`=="办案计划书",`金额`))-AVG(IF(`活动名称`=="立案信息",`金额`)))*COUNT(IF(`活动名称`=="立案信息",`金额`))'
       onChange={handleChange}
       onMount={(editor) => editorRef.current = editor}
     />
