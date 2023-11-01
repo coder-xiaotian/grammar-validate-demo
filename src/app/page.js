@@ -49,7 +49,7 @@ functionCallExpr = fn:$chars beginBracket head:paramType? tail:(comma restP:para
       paramList.push(s)
     })
   }
-  const error = options.validateFunctionName(fn, paramList)
+  const error = options.validateFunction(fn, paramList)
   if (error) {
     return expected(error)
   }
@@ -157,7 +157,7 @@ export default function Home() {
   function handleChange(value) {
     try {
       const res = parser.parse(value, {
-        validateFunctionName(funName, params) {
+        validateFunction(funName, params) {
           // 参数是否可选走长度校验
 
           console.log(funName, params, "params");
@@ -209,7 +209,6 @@ export default function Home() {
         },
       });
       console.log(res);
-      monaco.editor.setModelMarkers(editorRef.current.getModel(), "owner", []);
     } catch (e) {
       monaco.editor.setModelMarkers(editorRef.current.getModel(), "owner", [
         {
