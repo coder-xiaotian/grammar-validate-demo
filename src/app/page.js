@@ -53,8 +53,9 @@ functionCallExpr = fn:$chars beginBracket head:paramType? tail:(comma restP:para
   if (error) {
     return expected(error)
   }
+  // 注册函数名hover提示
+  options.registerFunctionHover(location(), fn)
   return {
-
     type: "CallExpression",
     callee: {
       type: "Identifier",
@@ -111,7 +112,6 @@ number = n:[0-9]+ {
   }
 }
 columnName = "\`" c:chars "\`" {
-
   const error = options.validateColumnName(c)
   if (error) {
     return expected(error)
@@ -156,7 +156,7 @@ export default function Home() {
   const editorRef = useRef();
   function handleChange(value) {
     try {
-      const res = parser.parse(value, {
+      parser.parse(value, {
         validateFunction(funName, params) {
           // 参数是否可选走长度校验
 
@@ -207,6 +207,20 @@ export default function Home() {
             return `没有该列名：${columnName}`;
           }
         },
+        registerFunctionHover(range, funcName) {
+          console.log(range, funcName)
+          monaco.languages.registerHoverProvider("javascript", {
+            provideHover() {
+              return {
+                range: new monaco.Range(range.start.line, range.start.column, range.end.line, range.end.column),
+                contents: [
+                  {value: "**函数描述**"},
+                  {value: functions[funcName].desc}
+                ],
+              }
+            }
+          })
+        }
       });
       monaco.editor.setModelMarkers(editorRef.current.getModel(), "owner", [])
     } catch (e) {
