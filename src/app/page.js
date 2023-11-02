@@ -208,7 +208,7 @@ export default function Home() {
           }
         },
       });
-      console.log(res);
+      monaco.editor.setModelMarkers(editorRef.current.getModel(), "owner", [])
     } catch (e) {
       monaco.editor.setModelMarkers(editorRef.current.getModel(), "owner", [
         {
