@@ -11,6 +11,7 @@ export const functions = {
     result: { number: "single" },
   },
 };
+// 数据的改变
 
 export const table = [
   { name: "column1", valueType: "number" },
