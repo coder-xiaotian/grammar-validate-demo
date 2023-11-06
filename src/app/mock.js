@@ -12,6 +12,7 @@ export const functions = {
   },
 };
 // 数据的改变
+// 数据的增加
 
 export const table = [
   { name: "column1", valueType: "number" },
